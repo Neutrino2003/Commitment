@@ -1,0 +1,84 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1, width=device-width" />
+    <link rel="stylesheet" href="{% static 'css/index.css' %}" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" />
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Font Awesome 5 Brands:wght@400&display=swap" />
+</head>
+
+<body>
+    <div class="signup-login">
+        <div class="signup-box">
+            <form method="post">
+                {% csrf_token %}
+                <div class="heading">
+                    Sign Up
+                </div>
+
+                <div class="line"></div>
+
+                <!-- Display error messages -->
+                {% if messages %}
+                    <div style="margin: 15px 30px; padding: 10px; background-color: rgba(255, 100, 100, 0.3); border-radius: 5px; border-left: 4px solid #ff6464;">
+                        {% for message in messages %}
+                            <p style="margin: 5px 0; color: #ffaaaa; font-size: 14px;">{{ message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="field">
+                    <b>First Name</b>
+                    <input class="inp" type="text" name="first_name" required placeholder="Enter Your First Name" value="{{ request.POST.first_name }}">
+                </div>
+
+                <div class="field">
+                    <b>Last Name</b>
+                    <input class="inp" type="text" name="last_name" required placeholder="Enter Your Last Name" value="{{ request.POST.last_name }}">
+                </div>
+
+                <div class="field">
+                    <b>Username</b>
+                    <input class="inp" type="text" name="username" required placeholder="Enter Your Username" value="{{ request.POST.username }}">
+                </div>
+
+                <div class="field">
+                    <b>Email</b>
+                    <input class="inp" type="email" name="email" required placeholder="Enter Your Email Address" value="{{ request.POST.email }}">
+                </div>
+
+                <div class="field">
+                    <b>Password</b>
+                    <input class="inp" type="password" name="password" required placeholder="Enter Password (Min 8 characters)">
+                </div>
+
+                <div class="field">
+                    <b>Confirm Password</b>
+                    <input class="inp" type="password" name="password_confirm" required placeholder="Confirm Password">
+                </div>
+
+                <div class="field">
+                    <input class="submit-button" type="submit" value="Sign Up">
+                </div>
+
+                <div class="line"></div>
+
+                <div class="field" style="text-align: center; margin-bottom: 20px;">
+                    <span style="font-size: 16px;">Already have an account?</span>
+                    <br>
+                    <a class="anc" href="/loginn">Login</a>
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+</body>
+
+</html>
