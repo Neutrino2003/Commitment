@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login ,logout
 from django.contrib import messages
 
 # Create your views here.
@@ -75,7 +75,7 @@ def login_view(request):
         if user is not None:
             login(request, user)
             messages.success(request, f"Welcome back, {user.first_name}!")
-            return redirect("home")  # Redirect to home or dashboard
+            return redirect("home") 
         else:
             messages.error(request, "Invalid username or password!")
             return render(request, "loginn.html")
