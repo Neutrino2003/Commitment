@@ -17,7 +17,21 @@ class CustomUser(AbstractUser):
         default='normal',
     )
     
-    phone_number = models.CharField(max_lenghth=15, blank=True, null=True)
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
+
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='custom_user_groups',
+        blank=True,
+        help_text='The groups this user belongs to.',
+    )
+    
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='custom_user_permissions',
+        blank=True,
+        help_text='Specific permissions for this user.',
+    )
 
     def __str__(self):
         return f"{self.get_full_name()} ({self.username})"

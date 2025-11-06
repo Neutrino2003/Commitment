@@ -16,9 +16,16 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path
-from users import views
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from users.views import (
+    CustomTokenObtainPairView, UserRegistrationViewSet, UserProfileViewSet,
+    FriendNotificationViewSet, UserStatisticsViewSet
+)
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("signup/", views.signup, name="signup"),
