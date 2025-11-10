@@ -71,10 +71,19 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',      # Anonymous users: 100 requests/hour
+        'user': '1000/hour',    # Authenticated users: 1000 requests/hour
+        'auth': '5/minute' 
+    }
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),      # Access token expires in 15 minutes
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),      # Access token expires in 15 minutes
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),        # Refresh token expires in 1 day
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': False,

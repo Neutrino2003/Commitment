@@ -23,13 +23,30 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from users.views import (
-    UserRegistrationViewSet,
+    RegisterView,
+    UserProfileViewSet,
     CustomTokenObtainPairView,
     AccountLogout,
 )
+from commitments.views import CommitmentViewSet
+
+router = DefaultRouter()
+
+# Auth and User endpoints
+router.register(r'profile', UserProfileViewSet, basename='profile')
+
+router.register(r'contracts', CommitmentViewSet, basename='contract')
+
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("signup/", UserRegistrationViewSet.as_view({'post': 'register'}), name="signup"),
-    path("login/", CustomTokenObtainPairView.as_view(), name="login"),
-    path("logout/", AccountLogout.as_view(), name="logout"),
+    
+    path("api/", include(router.urls)),
+    path("api/auth/register/", RegisterView.as_view(), name="register"),
+    path("api/token/", CustomTokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/logout/", AccountLogout.as_view(), name="account_logout"),
+
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    

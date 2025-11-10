@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from django.contrib.auth.models import User
 from .models import CustomUser, UserStatistics
 
 class Default_SignupSerializer(serializers.ModelSerializer):
@@ -76,4 +75,5 @@ class UserStatisticsSerializer(serializers.ModelSerializer):
             'total_loss', 'complaints_applied', 'complaints_approved',
             'complaints_rejected', 'last_updated'
         ]
-        read_only_fields = '__all__'
+        # Make all fields read-only for statistics (no direct modification via API)
+        read_only_fields = fields

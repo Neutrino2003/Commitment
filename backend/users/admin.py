@@ -10,6 +10,9 @@ class CustomUserAdmin(BaseUserAdmin):
         ('Preferences', {
             'fields': ('leniency', 'phone_number')
         }),
+        ('Statistics', {
+            'fields': ('total_stakes', 'successful_contracts', 'failed_contracts')
+        }),
     )
     list_display = ('username', 'email', 'first_name', 'last_name', 'leniency', 'is_active')
     search_fields = ('username', 'email', 'first_name', 'last_name')

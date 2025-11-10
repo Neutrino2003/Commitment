@@ -9,13 +9,21 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import logout, get_user_model
 from django.views.generic import TemplateView
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.throttling import SimpleRateThrottle
+
 
 from .serializers import Default_SignupSerializer, UserProfileSerializer, UserStatisticsSerializer
 from .models import CustomUser, UserStatistics
 
+
+class AuthThrottle(SimpleRateThrottle):
+    """Custom throttle for auth endpoints: 5 requests/minute"""
+    scope = 'auth'
+
 class AccountLogout(APIView):
     permission_classes = (IsAuthenticated,)
-
+    throttle_classes = [AuthThrottle]
+    
     def post(self, request):
         try:
             refresh_token = request.data["refresh_token"]
@@ -44,18 +52,15 @@ User = get_user_model()
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     """Custom JWT token obtain view"""
+    throttle_classes = [AuthThrottle]
     def get_serializer_class(self):
         return CustomTokenObtainPairSerializer
 
-class UserRegistrationViewSet(viewsets.ModelViewSet):
-    """ViewSet for user registration"""
-    queryset = CustomUser.objects.all()
-    serializer_class = Default_SignupSerializer
+class RegisterView(APIView):
     permission_classes = [AllowAny]
-    http_method_names = ['post']
+    throttle_classes = [AuthThrottle]
     
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
-    def register(self, request):
+    def post(self, request):
         serializer = Default_SignupSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()

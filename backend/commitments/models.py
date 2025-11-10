@@ -1,8 +1,11 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
+from datetime import timedelta
 from users.models import CustomUser
 from decimal import Decimal
+from dateutil.relativedelta import relativedelta
+
 
 class Commitment(models.Model):
     
@@ -54,7 +57,8 @@ class Commitment(models.Model):
     )
     
     stake_amount = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
-    currency = models.CharField(max_length=10, default='Ruppees')
+    # NOTE: Corrected spelling of currency default value.
+    currency = models.CharField(max_length=10, default='Rupees')
     leniency = models.CharField(max_length=10, choices=LENIENCY_CHOICES, default='normal')
     
     
@@ -117,7 +121,7 @@ class Commitment(models.Model):
         if self.status not in ['active', 'under_review']:
             return None
         time_diff = self.end_time - timezone.now()
-        return max(time_diff, timezone.timedelta(0))
+        return max(time_diff, timedelta(0))
     
     def create_next_instance(self):
         """Create next recurring instance based on frequency"""
@@ -137,16 +141,8 @@ class Commitment(models.Model):
             next_start = current_start + timedelta(weeks=1)
             next_end = current_end + timedelta(weeks=1)
         elif self.frequency == 'monthly':
-            # Handle month addition carefully
-            month = current_start.month
-            year = current_start.year
-            if month == 12:
-                month = 1
-                year += 1
-            else:
-                month += 1
-            next_start = current_start.replace(month=month, year=year)
-            next_end = current_end.replace(month=month, year=year)
+            next_start = current_start + relativedelta(months=1)
+            next_end = current_end + relativedelta(months=1)
         else:
             return None
         
@@ -169,11 +165,13 @@ class Commitment(models.Model):
         
         return next_instance
     
+    @property
     def is_completed_on_time(self):
-        """Check if completed before or on deadline"""
-        if self.status not in ['completed']:
-            return None
-        if not self.completed_at:
+        """Return True if contract completed before or on deadline, else False/None.
+        Returns:
+            bool | None: None if not in completed state or missing timestamp, otherwise boolean.
+        """
+        if self.status != 'completed' or not self.completed_at:
             return None
         return self.completed_at <= self.end_time
     
