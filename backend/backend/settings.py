@@ -57,12 +57,33 @@ AUTH_USER_MODEL = 'users.CustomUser'
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+
+# CORS Settings for Next.js Frontend
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
 ]
 
 ROOT_URLCONF = "backend.urls"
@@ -111,16 +132,26 @@ WSGI_APPLICATION = "backend.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": config('DB_ENGINE', default='django.db.backends.postgresql'),
-        "NAME": config('DB_NAME', default='habitapp_db'),
-        "USER": config('DB_USER', default='postgres'),
-        "PASSWORD": config('DB_PASSWORD', default=''),
-        "HOST": config('DB_HOST', default='localhost'),
-        "PORT": config('DB_PORT', default='5432'),
+# Database - Use SQLite for development if DB_ENGINE not set to PostgreSQL
+if config('DB_ENGINE', default='') == 'django.db.backends.postgresql':
+    DATABASES = {
+        "default": {
+            "ENGINE": 'django.db.backends.postgresql',
+            "NAME": config('DB_NAME', default='habitapp_db'),
+            "USER": config('DB_USER', default='postgres'),
+            "PASSWORD": config('DB_PASSWORD', default=''),
+            "HOST": config('DB_HOST', default='localhost'),
+            "PORT": config('DB_PORT', default='5432'),
+        }
     }
-}
+else:
+    # Use SQLite for quick development
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 
 # Password validation

@@ -19,6 +19,18 @@ from .models import CustomUser, UserStatistics
 class AuthThrottle(SimpleRateThrottle):
     """Custom throttle for auth endpoints: 5 requests/minute"""
     scope = 'auth'
+    
+    def get_cache_key(self, request, view):
+        """Generate cache key for throttling based on IP address"""
+        if request.user and request.user.is_authenticated:
+            ident = request.user.pk
+        else:
+            ident = self.get_ident(request)
+        
+        return self.cache_format % {
+            'scope': self.scope,
+            'ident': ident
+        }
 
 class AccountLogout(APIView):
     permission_classes = (IsAuthenticated,)
@@ -26,13 +38,25 @@ class AccountLogout(APIView):
     
     def post(self, request):
         try:
-            refresh_token = request.data["refresh_token"]
-            token = RefreshToken(refresh_token)
-            token.blacklist()
+            refresh_token = request.data.get("refresh_token")
+            if refresh_token:
+                token = RefreshToken(refresh_token)
+                # Try to blacklist the token (requires token_blacklist app)
+                try:
+                    token.blacklist()
+                except AttributeError:
+                    # Blacklist not available, just invalidate on client side
+                    pass
             logout(request)
-            return Response(status=status.HTTP_205_RESET_CONTENT)
+            return Response(
+                {"detail": "Successfully logged out"},
+                status=status.HTTP_200_OK
+            )
         except Exception as e:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """Custom JWT token serializer with user data"""
