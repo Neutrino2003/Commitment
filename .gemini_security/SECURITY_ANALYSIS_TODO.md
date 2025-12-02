@@ -1,0 +1,15 @@
+- [x] Define the audit scope.
+- [x] SAST Recon on `backend/commitments/views.py`
+  - [x] Investigate data flow from `evidence_type`, `evidence_file`, `evidence_text` on line 133
+  - [x] Investigate data flow from `reason` on line 219
+  - [x] Investigate data flow from `complaint_text` on line 301
+  - [x] Investigate data flow from `request.data` in `ComplaintViewSet.perform_create` on line 415
+  - [x] Investigate data flow from `action`, `review_notes`, `refund_amount` in `ComplaintViewSet.review` on line 455
+  - [x] Investigate data flow from `action`, `notes` in `EvidenceVerificationViewSet.verify` on line 587
+- [x] SAST Recon on `backend/users/admin.py`
+- [x] SAST Recon on `backend/users/migrations/0001_initial.py`
+- [x] SAST Recon on `backend/users/tests.py`
+- [ ] SAST Recon on `backend/users/views.py`
+- [ ] SAST Recon on `frontend/app/contracts/create/page.tsx`
+- [ ] SAST Recon on `frontend/lib/api.ts`
+- [ ] Conduct the final review of all findings as per your **Minimizing False Positives** operating principle and generate the final report.

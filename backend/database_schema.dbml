@@ -1,0 +1,314 @@
+// Database Schema for Commitment Application
+// Generated from Django models
+// Use https://dbdiagram.io to visualize this schema
+
+Project CommitmentApp {
+  database_type: 'PostgreSQL'
+  Note: 'Accountability application with financial stakes for commitments'
+}
+
+// ============================================
+// USERS APP
+// ============================================
+
+Table users_customuser {
+  id integer [pk, increment]
+  
+  // Django AbstractUser fields
+  username varchar(150) [unique, not null]
+  first_name varchar(150)
+  last_name varchar(150)
+  email varchar(254) [unique]
+  password varchar(128) [not null]
+  is_staff boolean [default: false]
+  is_active boolean [default: true]
+  is_superuser boolean [default: false]
+  date_joined timestamp [default: `now()`]
+  last_login timestamp
+  
+  // Custom fields
+  phone_number varchar(15)
+  profile_complete boolean [default: false]
+  bio text
+  profile_image varchar(100)
+  leniency varchar(10) [default: 'normal', note: 'lenient, normal, hard']
+  updated_at timestamp [default: `now()`]
+  
+  indexes {
+    (date_joined) [name: 'idx_user_date_joined']
+  }
+  
+  Note: 'Custom user model with profile and leniency settings'
+}
+
+Table users_userstatistics {
+  id integer [pk, increment]
+  user_id integer [ref: > users_customuser.id, not null]
+  date date [not null, default: `now()`]
+  
+  total_stakes decimal(10,2) [default: 0]
+  total_contracts integer [default: 0]
+  successful_contracts integer [default: 0]
+  failed_contracts integer [default: 0]
+  total_loss decimal(10,2) [default: 0]
+  
+  complaints_applied integer [default: 0]
+  complaints_approved integer [default: 0]
+  complaints_rejected integer [default: 0]
+  
+  last_updated timestamp [default: `now()`]
+  
+  indexes {
+    (user_id, date) [unique, name: 'unique_user_date_stats']
+  }
+  
+  Note: 'User statistics tracking over time'
+}
+
+// ============================================
+// TASKS APP - Productivity Domain
+// ============================================
+
+Table tasks_tasklist {
+  id integer [pk, increment]
+  user_id integer [ref: > users_customuser.id, not null]
+  name varchar(100) [not null]
+  color varchar(7) [default: '#FFFFFF', note: 'Hex color code']
+  is_default boolean [default: false, note: 'Default inbox list']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  indexes {
+    (user_id, name) [unique, name: 'unique_user_tasklist']
+    (user_id, is_default) [name: 'idx_tasklist_default']
+  }
+  
+  Note: 'Container for organizing tasks (Work, Personal, Groceries)'
+}
+
+Table tasks_tag {
+  id integer [pk, increment]
+  user_id integer [ref: > users_customuser.id, not null]
+  name varchar(50) [not null]
+  created_at timestamp [default: `now()`]
+  
+  indexes {
+    (user_id, name) [unique, name: 'unique_user_tag']
+  }
+  
+  Note: 'Flexible labels for cross-cutting concerns (#urgent, #home)'
+}
+
+Table tasks_task {
+  id integer [pk, increment]
+  user_id integer [ref: > users_customuser.id, not null]
+  task_list_id integer [ref: > tasks_tasklist.id, not null]
+  parent_id integer [ref: > tasks_task.id, note: 'Subtask hierarchy']
+  
+  // Core fields
+  title varchar(255) [not null]
+  description text
+  
+  // Scheduling
+  due_date timestamp
+  is_all_day boolean [default: false]
+  
+  // Organization
+  priority integer [default: 0, note: '0=None, 1=Low, 3=Medium, 5=High, 9=Critical']
+  
+  // Status
+  is_completed boolean [default: false]
+  completed_at timestamp
+  
+  // Timestamps
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  indexes {
+    (user_id, is_completed) [name: 'idx_task_completed']
+    (user_id, due_date) [name: 'idx_task_due']
+    (task_list_id) [name: 'idx_task_list']
+  }
+  
+  Note: 'Atomic unit of productivity - can be upgraded to Commitment'
+}
+
+Table tasks_task_tags {
+  id integer [pk, increment]
+  task_id integer [ref: > tasks_task.id, not null]
+  tag_id integer [ref: > tasks_tag.id, not null]
+  
+  indexes {
+    (task_id, tag_id) [unique, name: 'unique_task_tag']
+  }
+}
+
+// ============================================
+// HABITS APP - Habit Tracking Domain
+// ============================================
+
+Table habits_habit {
+  id integer [pk, increment]
+  user_id integer [ref: > users_customuser.id, not null]
+  title varchar(255) [not null]
+  description text
+  
+  // Frequency configuration
+  days_of_week varchar(7) [default: '1111111', note: 'Binary Mon-Sun (1=active)']
+  
+  // Streak tracking
+  current_streak integer [default: 0]
+  best_streak integer [default: 0]
+  
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Note: 'Recurring behavior tracking with streak calculation'
+}
+
+Table habits_habitlog {
+  id integer [pk, increment]
+  habit_id integer [ref: > habits_habit.id, not null]
+  date date [not null]
+  completed boolean [default: true]
+  notes text
+  created_at timestamp [default: `now()`]
+  
+  indexes {
+    (habit_id, date) [unique, name: 'unique_habit_date']
+    (habit_id, date) [name: 'idx_habitlog_date']
+  }
+  
+  Note: 'Daily log entry for habit completion'
+}
+
+// ============================================
+// COMMITMENTS APP - Accountability Domain
+// ============================================
+
+Table commitments_commitment {
+  id integer [pk, increment]
+  user_id integer [ref: > users_customuser.id, not null]
+  task_id integer [ref: - tasks_task.id, note: 'Optional: Task boost to commitment']
+  
+  title varchar(255) [not null]
+  description text [not null]
+  
+  // Timeline
+  start_time timestamp [default: `now()`]
+  end_time timestamp [not null]
+  frequency varchar(20) [default: 'one_time', note: 'daily, weekly, monthly, one_time, custom']
+  custom_days varchar(20) [note: 'Comma-separated days (MON,TUE,WED)']
+  
+  // Stakes
+  stake_type varchar(20) [default: 'social', note: 'social, points, money']
+  stake_amount decimal(10,2) [note: 'Required for money type']
+  currency varchar(3) [default: 'INR', note: 'INR, USD, EUR, GBP']
+  leniency varchar(10) [default: 'normal', note: 'lenient, normal, hard']
+  
+  // Evidence
+  evidence_required boolean [default: true]
+  evidence_type varchar(30) [default: 'self_verification', note: 'photo, timelapse_video, self_verification, manual']
+  evidence_file varchar(100)
+  evidence_text text
+  evidence_submitted boolean [default: false]
+  evidence_submitted_at timestamp
+  
+  // Complaint
+  complaints_flagged boolean [default: false]
+  complaint text
+  
+  // Status and timestamps
+  status varchar(20) [default: 'draft', note: 'draft, active, completed, failed, cancelled, paused, appealed, under_review']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  completed_at timestamp
+  activated_at timestamp
+  
+  indexes {
+    (user_id, status) [name: 'idx_commitment_user_status']
+    (start_time, end_time) [name: 'idx_commitment_timeline']
+    (status, end_time) [name: 'idx_commitment_overdue']
+    (user_id, stake_type) [name: 'idx_commitment_paid']
+    (user_id, stake_type, status) [name: 'idx_commitment_paid_dashboard']
+  }
+  
+  Note: 'Main commitment model with financial stakes'
+}
+
+Table commitments_complaint {
+  id integer [pk, increment]
+  user_id integer [ref: > users_customuser.id, not null]
+  commitment_id integer [ref: > commitments_commitment.id, not null]
+  
+  // Complaint details
+  reason_category varchar(30) [default: 'other', note: 'technical_issue, emergency, illness, evidence_issue, deadline_dispute, other']
+  description text [not null]
+  evidence_file varchar(100)
+  
+  // Status tracking
+  status varchar(20) [default: 'pending', note: 'pending, under_review, approved, rejected']
+  
+  // Admin review
+  reviewed_by_id integer [ref: > users_customuser.id]
+  review_notes text
+  reviewed_at timestamp
+  
+  // Refund tracking
+  refund_amount decimal(10,2)
+  refund_processed boolean [default: false]
+  refund_processed_at timestamp
+  
+  // Timestamps
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  indexes {
+    (user_id, status) [name: 'idx_complaint_user_status']
+    (commitment_id, status) [name: 'idx_complaint_commitment']
+    (created_at) [name: 'idx_complaint_created']
+  }
+  
+  Note: 'User complaints about failed commitments'
+}
+
+Table commitments_evidenceverification {
+  id integer [pk, increment]
+  commitment_id integer [ref: - commitments_commitment.id, not null]
+  verified_by_id integer [ref: > users_customuser.id]
+  
+  status varchar(20) [default: 'pending', note: 'pending, approved, rejected, needs_more_info']
+  notes text
+  
+  created_at timestamp [default: `now()`]
+  verified_at timestamp
+  
+  indexes {
+    (status, created_at) [name: 'idx_evidence_status']
+  }
+  
+  Note: 'Admin verification of submitted evidence'
+}
+
+// ============================================
+// RELATIONSHIPS SUMMARY
+// ============================================
+
+// User has many:
+// - Tasks, TaskLists, Tags (productivity)
+// - Habits, HabitLogs (habit tracking)
+// - Commitments, Complaints (accountability)
+// - UserStatistics (analytics)
+
+// Task can be "boosted" to Commitment (OneToOne)
+// Task can have subtasks (self-referencing)
+// Task belongs to TaskList and can have many Tags
+
+// Habit has many HabitLogs
+
+// Commitment can be linked to a Task
+// Commitment can have many Complaints
+// Commitment has one EvidenceVerification (if submitted)
+
+// Complaint belongs to User and Commitment
+// EvidenceVerification belongs to Commitment

@@ -21,8 +21,11 @@ class AuthThrottle(SimpleRateThrottle):
     scope = 'auth'
     
     def get_cache_key(self, request, view):
-        """Generate cache key for throttling based on IP address"""
-        if request.user and request.user.is_authenticated:
+        """
+        Generate cache key based on IP address for anonymous users,
+        or user ID for authenticated users.
+        """
+        if request.user.is_authenticated:
             ident = request.user.pk
         else:
             ident = self.get_ident(request)
@@ -38,25 +41,13 @@ class AccountLogout(APIView):
     
     def post(self, request):
         try:
-            refresh_token = request.data.get("refresh_token")
-            if refresh_token:
-                token = RefreshToken(refresh_token)
-                # Try to blacklist the token (requires token_blacklist app)
-                try:
-                    token.blacklist()
-                except AttributeError:
-                    # Blacklist not available, just invalidate on client side
-                    pass
+            refresh_token = request.data["refresh_token"]
+            token = RefreshToken(refresh_token)
+            token.blacklist()
             logout(request)
-            return Response(
-                {"detail": "Successfully logged out"},
-                status=status.HTTP_200_OK
-            )
+            return Response(status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
-            return Response(
-                {"detail": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(status=status.HTTP_400_BAD_REQUEST)
         
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """Custom JWT token serializer with user data"""
@@ -89,12 +80,13 @@ class RegisterView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             refresh = RefreshToken.for_user(user)
+            
             return Response({
                 'message': 'Registration successful.',
                 'user': UserProfileSerializer(user).data,
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
-                'profile_complete': False,
+                'profile_complete': user.profile_complete,
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     

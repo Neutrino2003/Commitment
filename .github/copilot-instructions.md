@@ -202,3 +202,165 @@ python manage.py createsuperuser
 5. **MEDIUM**: Implement complaint resolution workflow and appeals system
 6. **LOW**: Add pagination globally (currently set to `None`)
 7. **LOW**: Build frontend (currently placeholder at `/frontend/filler.txt`)
+
+## AI Agent Productivity Guide
+
+### Essential Patterns for Immediate Productivity
+
+#### 1. **State Machine Pattern** (`commitments/models.py`)
+```python
+# Always use action methods, never direct save() for state changes
+commitment.activate()  # ✅ Correct - validates transitions
+commitment.status = 'active'; commitment.save()  # ❌ Wrong - bypasses validation
+
+# Action methods raise ValueError for invalid transitions
+try:
+    commitment.mark_completed()
+except ValueError as e:
+    # Handle invalid state transition
+```
+
+#### 2. **Dynamic Serializer Selection** (`commitments/views.py`)
+```python
+def get_serializer_class(self):
+    """Return different serializers based on action"""
+    if self.action == 'list':
+        return CommitmentListSerializer  # Simplified fields
+    elif self.action == 'retrieve':
+        return CommitmentDetailSerializer  # Full details
+    elif self.action in ['create', 'update']:
+        return CommitmentCreateUpdateSerializer  # Editable fields only
+```
+
+#### 3. **User Isolation Pattern** (All ViewSets)
+```python
+def get_queryset(self):
+    """Always filter by request.user to prevent cross-user data leaks"""
+    return Commitment.objects.filter(user=self.request.user)
+
+def perform_create(self, serializer):
+    """Always set user field on creation"""
+    serializer.save(user=self.request.user)
+```
+
+#### 4. **Background Task Integration** (`commitments/tasks.py`)
+```python
+# Tasks automatically handle notifications and recurring logic
+@shared_task
+def auto_activate_commitments():
+    """Runs every 15 minutes to activate commitments when start_time arrives"""
+    # Implementation handles draft → active transitions automatically
+```
+
+#### 5. **Computed Properties Pattern** (`commitments/models.py`)
+```python
+@property
+def time_remaining(self):
+    """Calculate remaining time until deadline"""
+    if self.status not in ['active', 'under_review']:
+        return None
+    time_diff = self.end_time - timezone.now()
+    return max(time_diff, timedelta(0))
+
+@property
+def is_overdue(self):
+    """Check if commitment is past deadline"""
+    return timezone.now() > self.end_time and self.status in ['active', 'under_review']
+```
+
+#### 6. **Relativedelta for Date Arithmetic** (`commitments/models.py`)
+```python
+# ✅ Correct - handles month boundaries properly
+from dateutil.relativedelta import relativedelta
+next_date = current_date + relativedelta(months=1)  # Jan 31 → Feb 28/29
+
+# ❌ Wrong - naive addition causes issues
+next_date = current_date + timedelta(days=30)  # Jan 31 → Feb 30 (invalid)
+```
+
+### Critical Developer Workflows
+
+#### **Testing State Transitions**
+```bash
+# After model changes, test all commitment states manually
+python manage.py shell
+>>> from commitments.models import Commitment
+>>> c = Commitment.objects.create(user=user, title="Test", ...)
+>>> c.activate()  # Should work
+>>> c.mark_completed()  # Should work
+>>> c.mark_failed()  # Should raise ValueError (already completed)
+```
+
+#### **Testing Background Tasks**
+```bash
+# Start Celery worker for task testing
+celery -A backend worker --loglevel=info
+
+# In another terminal, test task execution
+python manage.py shell
+>>> from commitments.tasks import auto_activate_commitments
+>>> auto_activate_commitments.delay()  # Check Celery logs
+```
+
+#### **File Upload Testing**
+```bash
+# Test evidence uploads with different file types
+curl -X POST -F "evidence_file=@photo.jpg" \
+  -H "Authorization: Bearer <token>" \
+  http://localhost:8000/api/contracts/1/mark_completed/
+```
+
+#### **Migration + Task Testing**
+```bash
+# Always run migrations and restart Celery after model changes
+python manage.py makemigrations
+python manage.py migrate
+# Restart Celery worker
+# Test all affected endpoints
+```
+
+### Cross-Component Communication Patterns
+
+#### **Task-Triggered Notifications**
+```python
+# Tasks automatically send emails for user-facing events
+from .tasks import send_commitment_notification
+send_commitment_notification.delay(commitment.id, 'completed')
+```
+
+#### **Auto-Recurring Contract Creation**
+```python
+# Completion automatically creates next instance for recurring contracts
+if contract.frequency != 'one_time':
+    next_instance = contract.create_next_instance()
+    # Returns new Commitment instance with status='active'
+```
+
+#### **JWT Token Lifecycle**
+```python
+# Registration/Login: Returns access + refresh tokens
+# Refresh: Generates new access token, blacklists old refresh token
+# Logout: Blacklists current refresh token
+# Auto-activation: Background tasks check and activate draft commitments
+```
+
+### Key Files for Understanding Architecture
+
+- **`backend/commitments/models.py`**: State machine, business logic, computed properties
+- **`backend/commitments/views.py`**: API patterns, serializer selection, action endpoints
+- **`backend/commitments/tasks.py`**: Background automation, notifications, recurring logic
+- **`backend/backend/celery.py`**: Task scheduling configuration
+- **`backend/users/views.py`**: Auth patterns, custom JWT serializer
+- **`frontend/lib/api.ts`**: Frontend API integration patterns
+
+### Common Gotchas
+
+1. **Never call `commitment.save()` directly** - use action methods (`activate()`, `mark_completed()`, etc.)
+2. **Always filter querysets by `request.user`** - security critical
+3. **Use `relativedelta` for months** - `timedelta` breaks on month boundaries
+4. **Test with Celery running** - many features depend on background tasks
+5. **Check email console output** - notifications are sent asynchronously
+6. **File uploads need proper validation** - current evidence handling is broken
+7. **State transitions are validated** - expect `ValueError` for invalid changes
+
+This guide focuses on the project's specific patterns that differ from generic Django/DRF practices. Master these patterns for immediate productivity.

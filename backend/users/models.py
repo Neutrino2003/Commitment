@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
+from datetime import date
 from decimal import Decimal
 
 # Create your models here.
@@ -50,7 +51,7 @@ class CustomUser(AbstractUser):
 class UserStatistics(models.Model):
     """Model to track user statistics over time"""
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='statistics')
-    date = models.DateField(default=timezone.now)
+    date = models.DateField(default=date.today)  # Fixed: use callable
     
     total_stakes = models.DecimalField(max_digits=10,decimal_places=2,default=0)
     total_contracts = models.IntegerField(default=0)
@@ -67,6 +68,9 @@ class UserStatistics(models.Model):
     class Meta:
         verbose_name = "User Statistics"
         verbose_name_plural = "User Statistics"
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'date'], name='unique_user_date_stats')
+        ]
     
     def __str__(self):
         return f"Stats for {self.user.username} on {self.date}"

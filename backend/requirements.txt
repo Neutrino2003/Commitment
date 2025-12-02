@@ -19,6 +19,12 @@ python-dotenv==1.1.1
 python-dateutil==2.9.0.post0
 pytz==2025.2
 
+# Celery & Task Queue
+celery==5.4.0
+redis==5.2.1
+django-celery-beat==2.8.1
+django-celery-results==2.6.0
+
 # HTTP Requests (if needed for external APIs)
 requests==2.32.5
 
