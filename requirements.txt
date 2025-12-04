@@ -1,0 +1,47 @@
+# Core Django
+Django==4.2.7
+djangorestframework==3.14.0
+djangorestframework-simplejwt==5.3.0
+
+# Database
+psycopg2-binary==2.9.9
+
+# Tree Structure for Infinite Nesting
+django-treebeard==4.7.1
+
+# Recurrence (RFC 5545 RRULE Support)
+django-recurrence==1.11.1
+python-dateutil==2.8.2
+
+# CORS Headers for Frontend
+django-cors-headers==4.3.1
+
+# Environment Variables
+python-decouple==3.8
+
+# Filtering and Search
+django-filter==23.5
+
+# PostgreSQL Full-Text Search
+django-contrib-postgres
+
+# Development Tools
+pytest==7.4.3
+pytest-django==4.7.0
+factory-boy==3.3.0
+faker==20.1.0
+
+# Code Quality
+black==23.12.0
+flake8==6.1.0
+isort==5.13.2
+
+# API Documentation
+drf-spectacular==0.27.0
+
+# Celery + Redis (Async Tasks & Caching)
+celery[redis]==5.3.6
+django-celery-beat==2.5.0
+django-celery-results==2.5.1
+redis==5.0.1
+django-redis==5.4.0

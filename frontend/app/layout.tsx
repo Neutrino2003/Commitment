@@ -1,14 +1,10 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "react-hot-toast";
-
-const inter = Inter({ subsets: ["latin"] });
+import Providers from "./providers";
 
 export const metadata: Metadata = {
-  title: "Commitment - Track Your Goals with Financial Stakes",
-  description:
-    "Create commitment contracts with financial stakes to achieve your goals",
+  title: "TickTick Clone",
+  description: "Anti-procrastination productivity app",
 };
 
 export default function RootLayout({
@@ -18,9 +14,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <Toaster position="top-right" />
-        {children}
+      <body>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );
