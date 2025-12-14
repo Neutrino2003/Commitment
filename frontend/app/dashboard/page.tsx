@@ -82,7 +82,7 @@ export default function Dashboard() {
       {/* Navigation */}
       <nav className="bg-white shadow-sm">
         <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold text-indigo-600">
+          <Link href="/" className="text-4xl font-bold text-indigo-600">
             Commitment
           </Link>
           <div className="flex items-center gap-4">
