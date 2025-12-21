@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from decimal import Decimal
+import logging
 
 from .models import Commitment, Complaint, EvidenceVerification
 from .serializers import (
@@ -22,6 +23,8 @@ from .serializers import (
     EvidenceVerificationSerializer,
     CommitmentDashboardSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class CommitmentViewSet(viewsets.ModelViewSet):
@@ -57,6 +60,19 @@ class CommitmentViewSet(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context['request'] = self.request
         return context
+    
+    def create(self, request, *args, **kwargs):
+        """Override create to add logging and better error handling."""
+        logger.info(f"Creating commitment with data: {request.data}")
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        except Exception as e:
+            logger.error(f"Error creating commitment: {str(e)}", exc_info=True)
+            raise
     
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
