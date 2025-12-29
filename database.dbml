@@ -1,0 +1,238 @@
+Project "TickTick Clone" {
+  database_type: 'PostgreSQL'
+  Note: 'DBML representation of the TickTick Clone database schema, including Commitments.'
+}
+
+// --------------------------------------------------
+// Users App
+// --------------------------------------------------
+
+Table users {
+  id int [pk, increment]
+  username varchar [not null, unique]
+  email varchar [not null]
+  password varchar [not null]
+  first_name varchar
+  last_name varchar
+  timezone varchar [default: 'UTC']
+  is_active boolean [default: true]
+  is_staff boolean [default: false]
+  is_superuser boolean [default: false]
+  date_joined datetime
+  last_login datetime
+  created_at datetime
+  updated_at datetime
+}
+
+// --------------------------------------------------
+// Tasks App
+// --------------------------------------------------
+
+Table lists {
+  id int [pk, increment]
+  user_id int [ref: > users.id]
+  name varchar [not null]
+  color varchar [default: '#1E90FF']
+  icon varchar
+  sort_order float [default: 0.0]
+  created_at datetime
+  updated_at datetime
+
+  indexes {
+    (user_id, name) [unique]
+  }
+}
+
+Table tags {
+  id int [pk, increment]
+  user_id int [ref: > users.id]
+  name varchar [not null]
+  color varchar [default: '#808080']
+  created_at datetime
+  updated_at datetime
+
+  indexes {
+    (user_id, name) [unique]
+  }
+}
+
+Table tasks {
+  id int [pk, increment]
+  user_id int [ref: > users.id]
+  list_id int [ref: > lists.id]
+  title varchar [not null]
+  notes text
+  
+  // Scheduling
+  due_date datetime
+  start_date datetime
+  duration_minutes int
+  recurrence text // RFC 5545 RRULE
+  
+  // Status & Priority
+  status varchar [default: 'TODO'] // TODO, IN_PROGRESS, COMPLETED, CANCELLED
+  priority int [default: 0] // 0=None, 1=Low, 2=Medium, 3=High
+  kanban_order float [default: 0.0]
+  completed_at datetime
+  
+  // Treebeard (Materialized Path)
+  path varchar [unique]
+  depth int
+  numchild int
+  
+  created_at datetime
+  updated_at datetime
+}
+
+Table tasks_tags {
+  task_id int [ref: > tasks.id]
+  tag_id int [ref: > tags.id]
+  
+  indexes {
+    (task_id, tag_id) [pk]
+  }
+}
+
+Table habits {
+  id int [pk, increment]
+  user_id int [ref: > users.id]
+  name varchar [not null]
+  description text
+  color varchar [default: '#4CAF50']
+  icon varchar
+  frequency varchar [default: 'DAILY'] // DAILY, WEEKLY, CUSTOM
+  target_days int [default: 7]
+  recurrence text
+  sort_order float [default: 0.0]
+  is_active boolean [default: true]
+  created_at datetime
+  updated_at datetime
+}
+
+Table habit_logs {
+  id int [pk, increment]
+  habit_id int [ref: > habits.id]
+  date date
+  completed boolean [default: false]
+  notes text
+  created_at datetime
+  updated_at datetime
+
+  indexes {
+    (habit_id, date) [unique]
+  }
+}
+
+// --------------------------------------------------
+// Commitments App
+// --------------------------------------------------
+
+Table commitments {
+  id int [pk, increment]
+  task_id int [unique, ref: - tasks.id] // OneToOne
+  
+  // Status & Stakes
+  status varchar [default: 'draft'] // draft, active, completed, failed, etc.
+  stake_type varchar [default: 'social'] // social, points, money
+  stake_amount decimal
+  currency varchar [default: 'INR']
+  leniency varchar [default: 'normal']
+  
+  // Evidence
+  evidence_required boolean [default: true]
+  evidence_type varchar [default: 'self_verification']
+  evidence_file varchar
+  evidence_text text
+  evidence_submitted boolean [default: false]
+  evidence_submitted_at datetime
+  
+  // Complaint
+  complaints_flagged boolean [default: false]
+  complaint text
+  
+  // Timestamps
+  created_at datetime
+  updated_at datetime
+  completed_at datetime
+  activated_at datetime
+}
+
+Table commitment_complaints {
+  id int [pk, increment]
+  user_id int [ref: > users.id]
+  commitment_id int [ref: > commitments.id]
+  
+  reason_category varchar [default: 'other']
+  description text
+  evidence_file varchar
+  status varchar [default: 'pending']
+  
+  // Review
+  reviewed_by_id int [ref: > users.id]
+  review_notes text
+  reviewed_at datetime
+  
+  // Refund
+  refund_amount decimal
+  refund_processed boolean [default: false]
+  refund_processed_at datetime
+  
+  created_at datetime
+  updated_at datetime
+}
+
+Table commitment_evidence_verifications {
+  id int [pk, increment]
+  commitment_id int [unique, ref: - commitments.id] // OneToOne
+  
+  status varchar [default: 'pending']
+  notes text
+  verified_by_id int [ref: > users.id]
+  verified_at datetime
+  
+  created_at datetime
+}
+
+// --------------------------------------------------
+// Celery Tasks (django_celery_beat + django_celery_results)
+// --------------------------------------------------
+
+Table django_celery_beat_periodictask {
+  id int [pk, increment]
+  name varchar [unique]
+  task varchar
+  args text
+  kwargs text
+  queue varchar
+  exchange varchar
+  routing_key varchar
+  expires datetime
+  enabled boolean [default: true]
+  last_run_at datetime
+  total_run_count int [default: 0]
+  date_changed datetime
+  description text
+  crontab_id int
+  interval_id int
+  solar_id int
+  clocked_id int
+  one_off boolean [default: false]
+}
+
+Table django_celery_results_taskresult {
+  id int [pk, increment]
+  task_id varchar [unique]
+  status varchar
+  content_type varchar
+  content_encoding varchar
+  result text
+  date_created datetime
+  date_done datetime
+  traceback text
+  meta text
+  task_args text
+  task_kwargs text
+  task_name varchar
+  worker varchar
+  periodic_task_name varchar
+}

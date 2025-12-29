@@ -1,5 +1,108 @@
-# Python / Django
-/backend/venv/
-/backend/__pycache__/
-/backend/*.sqlite3
-/backend/.env
+# ================== PYTHON / DJANGO ==================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+/media
+/staticfiles
+
+# ================== NODE.JS / NEXT.JS ==================
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Next.js build output
+frontend/.next/
+frontend/out/
+
+# Production build
+frontend/build/
+
+# Vercel
+.vercel
+
+# ================== ENVIRONMENT ==================
+# Keep .env.example, ignore actual env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+
+# ================== IDE / EDITOR ==================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# ================== OS ==================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ================== TESTING ==================
+.coverage
+htmlcov/
+.pytest_cache/
+coverage/
+.nyc_output/
+
+# ================== DATABASE ==================
+*.dump
+*.sql
+
+# ================== MISC ==================
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# TypeScript cache
+*.tsbuildinfo
+
+# ESLint cache
+.eslintcache
+
+# Turbo
+.turbo
+
+# PWA files
+**/public/sw.js
+**/public/workbox-*.js
+**/public/sw.js.map
+**/public/workbox-*.js.map

@@ -1,134 +1,263 @@
-import axios from "axios";
+import axios, { AxiosError } from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
-// Create axios instance with default config
 const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
+    baseURL: API_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json',
+    },
 });
 
-// Add token to requests if available
+// Add interceptor for JWT token
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("access_token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
 });
 
-// Handle token refresh on 401
+// Add response interceptor for token refresh
 api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
+    (response) => response,
+    async (error: AxiosError) => {
+        const originalRequest = error.config as any;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true;
 
-      try {
-        const refreshToken = localStorage.getItem("refresh_token");
-        const response = await axios.post(`${API_URL}/token/refresh/`, {
-          refresh: refreshToken,
-        });
+            try {
+                const refreshToken = localStorage.getItem('refreshToken');
+                if (refreshToken) {
+                    const response = await axios.post(`${API_BASE_URL}/auth/token/refresh/`, {
+                        refresh: refreshToken
+                    });
 
-        const { access } = response.data;
-        localStorage.setItem("access_token", access);
+                    const { access } = response.data;
+                    localStorage.setItem('accessToken', access);
 
-        originalRequest.headers.Authorization = `Bearer ${access}`;
-        return api(originalRequest);
-      } catch (refreshError) {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
-        window.location.href = "/login";
-        return Promise.reject(refreshError);
-      }
+                    originalRequest.headers.Authorization = `Bearer ${access}`;
+                    return api(originalRequest);
+                }
+            } catch (refreshError) {
+                // Refresh failed, clear tokens and redirect to login
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                window.location.href = '/login';
+                return Promise.reject(refreshError);
+            }
+        }
+
+        return Promise.reject(error);
     }
-
-    return Promise.reject(error);
-  }
 );
 
-// Auth API
-export const authAPI = {
-  register: async (data: {
-    username: string;
-    email: string;
-    password: string;
-    password_confirm: string;
-    first_name?: string;
-    last_name?: string;
-    phone_number?: string;
-  }) => {
-    const response = await api.post("/auth/register/", data);
-    if (response.data.access) {
-      localStorage.setItem("access_token", response.data.access);
-      localStorage.setItem("refresh_token", response.data.refresh);
-    }
-    return response.data;
-  },
+// ============================================================================
+// AUTH API
+// ============================================================================
+export const authApi = {
+    login: (username: string, password: string) =>
+        api.post('/auth/login/', { username, password }),
 
-  login: async (username: string, password: string) => {
-    const response = await api.post("/token/", { username, password });
-    if (response.data.access) {
-      localStorage.setItem("access_token", response.data.access);
-      localStorage.setItem("refresh_token", response.data.refresh);
-    }
-    return response.data;
-  },
+    register: (data: { username: string; email: string; password: string; password2: string }) =>
+        api.post('/auth/register/', data),
 
-  logout: async () => {
-    const refreshToken = localStorage.getItem("refresh_token");
-    try {
-      await api.post("/logout/", { refresh_token: refreshToken });
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
+    getProfile: () => api.get('/auth/profile/'),
+
+    updateProfile: (data: any) => api.patch('/auth/profile/', data),
+
+    refreshToken: (refreshToken: string) =>
+        api.post('/auth/token/refresh/', { refresh: refreshToken }),
+
+    // Google OAuth
+    getGoogleAuthUrl: () => api.get('/auth/google/'),
+
+    logout: () => {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+    },
+
+    isAuthenticated: () => {
+        return !!localStorage.getItem('accessToken');
+    },
+
+    setTokens: (access: string, refresh: string) => {
+        localStorage.setItem('accessToken', access);
+        localStorage.setItem('refreshToken', refresh);
     }
-  },
 };
 
-// Profile API
-export const profileAPI = {
-  get: () => api.get("/profile/"),
-  update: (data: any) => api.patch("/profile/update_profile/", data),
-  changePassword: (data: {
-    old_password: string;
-    new_password: string;
-    new_password_confirm: string;
-  }) => api.post("/profile/change_password/", data),
+// ============================================================================
+// TASKS API
+// ============================================================================
+export const tasksApi = {
+    getAll: () => api.get('/tasks/'),
+    get: (id: number) => api.get(`/tasks/${id}/`),
+    create: (data: any) => api.post('/tasks/', data),
+    update: (id: number, data: any) => api.patch(`/tasks/${id}/`, data),
+    delete: (id: number) => api.delete(`/tasks/${id}/`),
+
+    getTree: () => api.get('/tasks/tree/'),
+    completeRecurring: (id: number) => api.post(`/tasks/${id}/complete_recurring/`),
+    reorder: (orders: { id: number; order: number }[]) => api.post('/tasks/reorder/', orders),
 };
 
-// Contracts/Commitments API
-export const contractsAPI = {
-  list: () => api.get("/contracts/"),
-  get: (id: number) => api.get(`/contracts/${id}/`),
-  create: (data: any) => api.post("/contracts/", data),
-  update: (id: number, data: any) => api.patch(`/contracts/${id}/`, data),
-  delete: (id: number) => api.delete(`/contracts/${id}/`),
+// ============================================================================
+// LISTS API
+// ============================================================================
+export const listsApi = {
+    getAll: () => api.get('/lists/'),
+    get: (id: number) => api.get(`/lists/${id}/`),
+    create: (data: any) => api.post('/lists/', data),
+    update: (id: number, data: any) => api.patch(`/lists/${id}/`, data),
+    delete: (id: number) => api.delete(`/lists/${id}/`),
+};
 
-  // Actions
-  activate: (id: number) => api.post(`/contracts/${id}/activate/`),
-  pause: (id: number) => api.post(`/contracts/${id}/pause/`),
-  resume: (id: number) => api.post(`/contracts/${id}/resume/`),
-  cancel: (id: number) => api.post(`/contracts/${id}/cancel/`),
-  markCompleted: (id: number, data: any) =>
-    api.post(`/contracts/${id}/mark_completed/`, data),
-  markFailed: (id: number, data: any) =>
-    api.post(`/contracts/${id}/mark_failed/`, data),
-  flagComplaint: (id: number, complaint: string) =>
-    api.post(`/contracts/${id}/flag_complaint/`, { complaint_text: complaint }),
+// ============================================================================
+// TAGS API
+// ============================================================================
+export const tagsApi = {
+    getAll: () => api.get('/tags/'),
+    get: (id: number) => api.get(`/tags/${id}/`),
+    create: (data: any) => api.post('/tags/', data),
+    update: (id: number, data: any) => api.patch(`/tags/${id}/`, data),
+    delete: (id: number) => api.delete(`/tags/${id}/`),
+};
 
-  // Filters
-  active: () => api.get("/contracts/active/"),
-  overdue: () => api.get("/contracts/overdue/"),
-  completed: () => api.get("/contracts/completed/"),
-  failed: () => api.get("/contracts/failed/"),
-  statistics: () => api.get("/contracts/statistics/"),
+// ============================================================================
+// HABITS API
+// ============================================================================
+export const habitsApi = {
+    getAll: () => api.get('/habits/'),
+    get: (id: number) => api.get(`/habits/${id}/`),
+    create: (data: any) => api.post('/habits/', data),
+    update: (id: number, data: any) => api.patch(`/habits/${id}/`, data),
+    delete: (id: number) => api.delete(`/habits/${id}/`),
+};
+
+// ============================================================================
+// HABIT LOGS API
+// ============================================================================
+export const habitLogsApi = {
+    getAll: () => api.get('/habit-logs/'),
+    create: (data: any) => api.post('/habit-logs/', data),
+    update: (id: number, data: any) => api.patch(`/habit-logs/${id}/`, data),
+};
+
+// ============================================================================
+// COMMITMENTS API
+// ============================================================================
+export const commitmentsApi = {
+    getAll: () => api.get('/commitments/'),
+    get: (id: number) => api.get(`/commitments/${id}/`),
+    create: (data: any) => api.post('/commitments/', data),
+    update: (id: number, data: any) => api.patch(`/commitments/${id}/`, data),
+    delete: (id: number) => api.delete(`/commitments/${id}/`),
+
+    getDashboard: () => api.get('/commitments/dashboard/'),
+
+    activate: (id: number) => api.post(`/commitments/${id}/activate/`),
+    submitEvidence: (id: number, formData: FormData) => api.post(`/commitments/${id}/submit_evidence/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+    complete: (id: number) => api.post(`/commitments/${id}/complete/`),
+    fail: (id: number, reason: string) => api.post(`/commitments/${id}/fail/`, { reason }),
+    pause: (id: number) => api.post(`/commitments/${id}/pause/`),
+    resume: (id: number) => api.post(`/commitments/${id}/resume/`),
+    cancel: (id: number) => api.post(`/commitments/${id}/cancel/`),
+};
+
+// ============================================================================
+// COMPLAINTS API
+// ============================================================================
+export const complaintsApi = {
+    getAll: () => api.get('/complaints/'),
+    create: (data: FormData) => api.post('/complaints/', data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+    get: (id: number) => api.get(`/complaints/${id}/`),
+};
+
+// ============================================================================
+// TASK ATTACHMENTS API
+// ============================================================================
+export const taskAttachmentsApi = {
+    getAll: () => api.get('/task-attachments/'),
+    getForTask: (taskId: number) => api.get(`/task-attachments/for_task/?task_id=${taskId}`),
+    get: (id: number) => api.get(`/task-attachments/${id}/`),
+
+    upload: (taskId: number, file: File, onProgress?: (progress: number) => void) => {
+        const formData = new FormData();
+        formData.append('task', taskId.toString());
+        formData.append('file', file);
+
+        return api.post('/task-attachments/', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            onUploadProgress: (progressEvent) => {
+                if (onProgress && progressEvent.total) {
+                    const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    onProgress(progress);
+                }
+            }
+        });
+    },
+
+    delete: (id: number) => api.delete(`/task-attachments/${id}/`),
+};
+
+// ============================================================================
+// COMMITMENT ATTACHMENTS API
+// ============================================================================
+export const commitmentAttachmentsApi = {
+    getAll: () => api.get('/commitment-attachments/'),
+    getForCommitment: (commitmentId: number) =>
+        api.get(`/commitment-attachments/for_commitment/?commitment_id=${commitmentId}`),
+    get: (id: number) => api.get(`/commitment-attachments/${id}/`),
+
+    upload: (
+        commitmentId: number,
+        file: File,
+        attachmentType: 'evidence' | 'document' | 'other' = 'evidence',
+        description: string = '',
+        onProgress?: (progress: number) => void
+    ) => {
+        const formData = new FormData();
+        formData.append('commitment', commitmentId.toString());
+        formData.append('file', file);
+        formData.append('attachment_type', attachmentType);
+        if (description) {
+            formData.append('description', description);
+        }
+
+        return api.post('/commitment-attachments/', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            onUploadProgress: (progressEvent) => {
+                if (onProgress && progressEvent.total) {
+                    const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    onProgress(progress);
+                }
+            }
+        });
+    },
+
+    delete: (id: number) => api.delete(`/commitment-attachments/${id}/`),
+};
+
+// ============================================================================
+// SYNC API
+// ============================================================================
+export const syncApi = {
+    getAll: () => api.get('/sync/'),
+};
+
+// ============================================================================
+// CALENDAR API
+// ============================================================================
+export const calendarApi = {
+    getByDateRange: (startDate: string, endDate: string) =>
+        api.get('/calendar/', { params: { start_date: startDate, end_date: endDate } }),
 };
 
 export default api;
+
