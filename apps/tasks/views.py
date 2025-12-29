@@ -19,10 +19,11 @@ from django.utils.dateparse import parse_datetime
 from django.utils import timezone
 from datetime import datetime
 
-from .models import List, Tag, Task, Habit, HabitLog
+from .models import List, Tag, Task, Habit, HabitLog, TaskAttachment
 from .serializers import (
     ListSerializer, TagSerializer, TaskSerializer, TaskTreeSerializer,
-    HabitSerializer, HabitLogSerializer, SyncResponseSerializer
+    HabitSerializer, HabitLogSerializer, SyncResponseSerializer,
+    TaskAttachmentSerializer
 )
 from .services import RecurrenceService, TaskService, HabitService
 
@@ -293,3 +294,67 @@ class TaskReorderAPIView(APIView):
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+
+class TaskAttachmentViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for TaskAttachment CRUD operations.
+    
+    Supports:
+    - Uploading files to tasks
+    - Downloading attachments
+    - Deleting attachments
+    """
+    
+    serializer_class = TaskAttachmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ['task']
+    ordering_fields = ['created_at']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        """Filter to attachments for current user's tasks."""
+        return TaskAttachment.objects.filter(
+            task__user=self.request.user
+        ).select_related('task', 'uploaded_by')
+    
+    def create(self, request, *args, **kwargs):
+        """Handle file upload with task validation."""
+        task_id = request.data.get('task')
+        
+        if not task_id:
+            return Response(
+                {'error': 'task is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Verify user owns the task
+        try:
+            task = Task.objects.get(id=task_id, user=request.user)
+        except Task.DoesNotExist:
+            return Response(
+                {'error': 'Task not found or you don\'t have permission'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        return super().create(request, *args, **kwargs)
+    
+    @action(detail=False, methods=['get'])
+    def for_task(self, request):
+        """
+        Get all attachments for a specific task.
+        
+        GET /api/task-attachments/for_task/?task_id=123
+        """
+        task_id = request.query_params.get('task_id')
+        
+        if not task_id:
+            return Response(
+                {'error': 'task_id query parameter is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        attachments = self.get_queryset().filter(task_id=task_id)
+        serializer = self.get_serializer(attachments, many=True)
+        return Response(serializer.data)

@@ -9,7 +9,8 @@ Supports:
 
 from rest_framework import serializers
 from django.db import transaction
-from .models import Commitment, Complaint, EvidenceVerification
+from django.conf import settings
+from .models import Commitment, Complaint, EvidenceVerification, CommitmentAttachment
 from apps.tasks.models import Task, List
 from apps.tasks.serializers import TaskSerializer
 
@@ -216,3 +217,85 @@ class CommitmentDashboardSerializer(serializers.Serializer):
     total_stakes_at_risk = serializers.DecimalField(max_digits=12, decimal_places=2)
     pending_evidence_count = serializers.IntegerField()
     success_rate = serializers.FloatField()
+
+
+class CommitmentAttachmentSerializer(serializers.ModelSerializer):
+    """Serializer for CommitmentAttachment model."""
+    
+    file_url = serializers.SerializerMethodField()
+    is_image = serializers.BooleanField(read_only=True)
+    is_video = serializers.BooleanField(read_only=True)
+    file_extension = serializers.CharField(read_only=True)
+    uploaded_by_username = serializers.CharField(
+        source='uploaded_by.username', 
+        read_only=True
+    )
+    
+    class Meta:
+        model = CommitmentAttachment
+        fields = [
+            'id', 'commitment', 'attachment_type',
+            'file', 'file_url', 'file_name', 'file_size', 'file_type',
+            'is_image', 'is_video', 'file_extension',
+            'description', 'uploaded_by', 'uploaded_by_username',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'id', 'file_name', 'file_size', 'file_url',
+            'uploaded_by', 'uploaded_by_username',
+            'created_at', 'updated_at'
+        ]
+    
+    def get_file_url(self, obj):
+        """Return the full URL for the file."""
+        request = self.context.get('request')
+        if obj.file and request:
+            return request.build_absolute_uri(obj.file.url)
+        return obj.file.url if obj.file else None
+    
+    def validate_file(self, value):
+        """Validate file size and extension."""
+        max_size = getattr(settings, 'MAX_ATTACHMENT_SIZE', 10 * 1024 * 1024)
+        allowed_extensions = getattr(
+            settings, 
+            'ALLOWED_ATTACHMENT_EXTENSIONS',
+            ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'mp4', 'mov']
+        )
+        
+        if value.size > max_size:
+            raise serializers.ValidationError(
+                f"File size must be under {max_size // (1024*1024)}MB"
+            )
+        
+        ext = value.name.split('.')[-1].lower()
+        if ext not in allowed_extensions:
+            raise serializers.ValidationError(
+                f"File type .{ext} is not allowed"
+            )
+        
+        return value
+    
+    def validate_commitment(self, value):
+        """Ensure user owns the commitment."""
+        request = self.context.get('request')
+        if request and request.user:
+            if value.task.user != request.user:
+                raise serializers.ValidationError(
+                    "You don't have permission to add attachments to this commitment"
+                )
+        return value
+    
+    def create(self, validated_data):
+        """Set file metadata on creation."""
+        file = validated_data.get('file')
+        if file:
+            validated_data['file_name'] = file.name
+            validated_data['file_size'] = file.size
+            validated_data['file_type'] = file.content_type or ''
+        
+        # Set uploaded_by from request user
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            validated_data['uploaded_by'] = request.user
+        
+        return super().create(validated_data)

@@ -13,6 +13,7 @@ interface CommitmentCardProps {
     onFail?: (id: number) => void;
     onEdit?: (id: number) => void;
     onDelete?: (id: number) => void;
+    onClick?: () => void;
 }
 
 export const CommitmentCard: React.FC<CommitmentCardProps> = ({
@@ -22,7 +23,8 @@ export const CommitmentCard: React.FC<CommitmentCardProps> = ({
     onComplete,
     onFail,
     onEdit,
-    onDelete
+    onDelete,
+    onClick
 }) => {
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -43,7 +45,7 @@ export const CommitmentCard: React.FC<CommitmentCardProps> = ({
     };
 
     return (
-        <NeoCard className="p-4 mb-4 relative overflow-hidden group">
+        <NeoCard className="p-4 mb-4 relative overflow-hidden group cursor-pointer hover:translate-x-1 hover:-translate-y-1 transition-all" onClick={onClick}>
             <div className="flex justify-between items-start mb-2">
                 <div>
                     <h3 className="text-lg font-bold text-gray-800">{commitment.title}</h3>

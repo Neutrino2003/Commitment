@@ -9,12 +9,13 @@ import { useTags } from '@/hooks/useTags';
 import { Task } from '@/lib/types';
 import { NeoCard } from '@/components/ui/neo-card';
 import { NeoButton } from '@/components/ui/neo-button';
-import { Filter, Plus, SortAsc, Calendar as CalendarIcon, Tag as TagIcon, List as ListIcon } from 'lucide-react';
+import { Filter, Plus, SortAsc, Calendar as CalendarIcon, Tag as TagIcon, List as ListIcon, KanbanSquare } from 'lucide-react';
 import api from '@/lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { TaskCard } from '@/components/tasks/TaskCard';
+import TaskDetailModal from '@/components/tasks/TaskDetailModal';
 import { toast } from 'react-hot-toast';
-
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function TasksPage() {
@@ -26,6 +27,7 @@ export default function TasksPage() {
     const queryClient = useQueryClient();
 
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
     // Default to tomorrow 9 AM
     const getDefaultDate = () => {
@@ -197,6 +199,7 @@ export default function TasksPage() {
                     onDelete={handleDeleteTask}
                     onAddSubtask={handleAddSubtask}
                     onBoost={handleBoostTask}
+                    onClick={setSelectedTask}
                     listName={lists?.find(l => l.id === task.list)?.name}
                 />
                 {childrenMap.has(task.id) && (
@@ -326,6 +329,13 @@ export default function TasksPage() {
                             </h1>
 
                             <div className="flex gap-4">
+                                {/* View Toggle */}
+                                <Link href="/tasks/kanban">
+                                    <button className="flex items-center gap-2 px-3 py-2 bg-white border-2 border-ink-black font-bold hover:bg-gray-50 transition-colors">
+                                        <KanbanSquare size={18} />
+                                        Kanban
+                                    </button>
+                                </Link>
                                 <div className="flex items-center gap-2 bg-white border-2 border-ink-black px-3 py-2">
                                     <SortAsc size={20} />
                                     <select
@@ -437,6 +447,19 @@ export default function TasksPage() {
                             </form>
                         </NeoCard>
                     </div>
+                )}
+
+                {/* Task Detail Modal */}
+                {selectedTask && (
+                    <TaskDetailModal
+                        task={selectedTask}
+                        onClose={() => setSelectedTask(null)}
+                        onUpdate={() => setSelectedTask(null)}
+                        onDelete={(id) => {
+                            handleDeleteTask(id);
+                            setSelectedTask(null);
+                        }}
+                    />
                 )}
             </Layout>
         </AuthCheck>

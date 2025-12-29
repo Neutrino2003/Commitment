@@ -6,8 +6,9 @@ import AuthCheck from '@/components/layout/auth-check';
 import { useHabits, useHabitMutations } from '@/hooks/useHabits';
 import { NeoButton } from '@/components/ui/neo-button';
 import { NeoCard } from '@/components/ui/neo-card';
-import { Edit2, Trash2, X } from 'lucide-react';
+import { Edit2, Trash2, X, BarChart3 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import Link from 'next/link';
 
 export default function HabitsPage() {
     const { data: habits, isLoading } = useHabits();
@@ -111,11 +112,19 @@ export default function HabitsPage() {
                         <h1 className="text-4xl font-black">
                             HABITS <span className="text-focus-yellow">TRACKER</span>
                         </h1>
-                        {!showCreateForm && (
-                            <NeoButton onClick={() => setShowCreateForm(true)}>
-                                + NEW HABIT
-                            </NeoButton>
-                        )}
+                        <div className="flex gap-3">
+                            <Link href="/habits/analytics">
+                                <button className="flex items-center gap-2 px-4 py-2 bg-white border-3 border-ink-black font-bold hover:bg-gray-50 transition-colors">
+                                    <BarChart3 size={18} />
+                                    Analytics
+                                </button>
+                            </Link>
+                            {!showCreateForm && (
+                                <NeoButton onClick={() => setShowCreateForm(true)}>
+                                    + NEW HABIT
+                                </NeoButton>
+                            )}
+                        </div>
                     </div>
 
                     {/* Create/Edit Form */}

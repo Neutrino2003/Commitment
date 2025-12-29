@@ -11,10 +11,11 @@ interface TaskCardProps {
     onDelete?: (id: number) => void;
     onAddSubtask?: (task: Task) => void;
     onBoost?: (task: Task) => void;
+    onClick?: (task: Task) => void;
     listName?: string;
 }
 
-export const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onEdit, onDelete, onAddSubtask, onBoost, listName }) => {
+export const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onEdit, onDelete, onAddSubtask, onBoost, onClick, listName }) => {
     const priorityColors = {
         3: '#FF6B6B', // High
         2: '#FFA500', // Medium
@@ -32,10 +33,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, onEdit, on
     return (
         <NeoCard
             className={cn(
-                "group transition-all hover:translate-x-1 hover:-translate-y-1 relative overflow-hidden",
+                "group transition-all hover:translate-x-1 hover:-translate-y-1 relative overflow-hidden cursor-pointer",
                 task.status === 'COMPLETED' && "opacity-60 grayscale"
             )}
             style={{ borderLeft: `6px solid ${priorityColors[task.priority as keyof typeof priorityColors]}` }}
+            onClick={() => onClick?.(task)}
         >
             <div className="flex items-start gap-4">
                 {/* ... existing checkbox ... */}

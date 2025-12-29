@@ -45,3 +45,9 @@ django-celery-beat==2.5.0
 django-celery-results==2.5.1
 redis==5.0.1
 django-redis==5.4.0
+
+# OAuth & Social Authentication
+django-allauth==0.63.3
+
+# Image Processing
+Pillow==10.2.0

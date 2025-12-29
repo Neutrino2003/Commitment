@@ -16,6 +16,7 @@ import {
   Plus,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import CommandPalette from "./CommandPalette";
 
 export function AppNavbar() {
   const router = useRouter();
@@ -67,6 +68,7 @@ export function AppNavbar() {
 
             {/* Action Buttons */}
             <div className="flex items-center gap-3">
+              <CommandPalette />
               <button
                 onClick={() => router.push("/settings")}
                 className="p-2 bg-white border-3 border-ink-black hover:bg-gray-100 hover:shadow-neo-sm transition-all"

@@ -5,6 +5,8 @@ export interface Task {
     status: 'TODO' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
     priority: 0 | 1 | 2 | 3;
     due_date: string | null;
+    start_date?: string | null;
+    duration_minutes?: number | null;
     kanban_order: number;
     list: number | null;
     tags: Tag[];

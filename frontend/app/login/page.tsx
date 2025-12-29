@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NeoButton } from '@/components/ui/neo-button';
 import { NeoCard } from '@/components/ui/neo-card';
-import axios from 'axios';
-import { useRouter } from 'next/navigation';
+import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
+import { authApi } from '@/lib/api';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 export default function LoginPage() {
@@ -13,6 +14,22 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const searchParams = useSearchParams();
+
+    // Check for OAuth errors in URL params
+    useEffect(() => {
+        const errorParam = searchParams.get('error');
+        if (errorParam) {
+            setError(`Google sign-in failed: ${errorParam}`);
+        }
+    }, [searchParams]);
+
+    // Redirect if already authenticated
+    useEffect(() => {
+        if (authApi.isAuthenticated()) {
+            router.push('/');
+        }
+    }, [router]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -20,14 +37,10 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            const response = await axios.post('http://localhost:8000/api/auth/login/', {
-                username,
-                password,
-            });
+            const response = await authApi.login(username, password);
 
             // Store JWT tokens
-            localStorage.setItem('accessToken', response.data.access);
-            localStorage.setItem('refreshToken', response.data.refresh);
+            authApi.setTokens(response.data.access, response.data.refresh);
 
             // Redirect to dashboard
             router.push('/');
@@ -38,12 +51,28 @@ export default function LoginPage() {
         }
     };
 
+    const handleGoogleError = (errorMessage: string) => {
+        setError(errorMessage);
+    };
+
     return (
         <div className="min-h-screen bg-dot-grid flex items-center justify-center p-4">
             <NeoCard className="w-full max-w-md">
                 <div className="text-center mb-8">
                     <h1 className="text-4xl font-black mb-2">TICKTICK<span className="text-focus-yellow">CLONE</span></h1>
                     <p className="text-lg font-bold opacity-70">Anti-Procrastination Tool</p>
+                </div>
+
+                {/* Google Sign-in */}
+                <div className="mb-6">
+                    <GoogleSignInButton onError={handleGoogleError} />
+                </div>
+
+                {/* Divider */}
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="flex-1 h-0.5 bg-gray-200 dark:bg-gray-700"></div>
+                    <span className="text-sm font-bold text-gray-500 dark:text-gray-400">OR</span>
+                    <div className="flex-1 h-0.5 bg-gray-200 dark:bg-gray-700"></div>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-6">
@@ -100,3 +129,4 @@ export default function LoginPage() {
         </div>
     );
 }
+

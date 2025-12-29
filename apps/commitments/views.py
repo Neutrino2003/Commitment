@@ -15,13 +15,14 @@ from django.utils import timezone
 from decimal import Decimal
 import logging
 
-from .models import Commitment, Complaint, EvidenceVerification
+from .models import Commitment, Complaint, EvidenceVerification, CommitmentAttachment
 from .serializers import (
     CommitmentSerializer,
     CommitmentListSerializer,
     ComplaintSerializer,
     EvidenceVerificationSerializer,
     CommitmentDashboardSerializer,
+    CommitmentAttachmentSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -219,3 +220,66 @@ class EvidenceVerificationViewSet(viewsets.ReadOnlyModelViewSet):
         return EvidenceVerification.objects.filter(
             commitment__task__user=self.request.user
         ).select_related('commitment', 'commitment__task').order_by('-created_at')
+
+
+class CommitmentAttachmentViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for CommitmentAttachment CRUD operations.
+    
+    Supports:
+    - Uploading files to commitments
+    - Downloading attachments
+    - Deleting attachments
+    """
+    
+    serializer_class = CommitmentAttachmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        """Filter to attachments for current user's commitments."""
+        return CommitmentAttachment.objects.filter(
+            commitment__task__user=self.request.user
+        ).select_related('commitment', 'commitment__task', 'uploaded_by')
+    
+    def create(self, request, *args, **kwargs):
+        """Handle file upload with commitment validation."""
+        commitment_id = request.data.get('commitment')
+        
+        if not commitment_id:
+            return Response(
+                {'error': 'commitment is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Verify user owns the commitment
+        try:
+            commitment = Commitment.objects.get(
+                id=commitment_id, 
+                task__user=request.user
+            )
+        except Commitment.DoesNotExist:
+            return Response(
+                {'error': 'Commitment not found or you don\'t have permission'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        return super().create(request, *args, **kwargs)
+    
+    @action(detail=False, methods=['get'])
+    def for_commitment(self, request):
+        """
+        Get all attachments for a specific commitment.
+        
+        GET /api/commitment-attachments/for_commitment/?commitment_id=123
+        """
+        commitment_id = request.query_params.get('commitment_id')
+        
+        if not commitment_id:
+            return Response(
+                {'error': 'commitment_id query parameter is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        attachments = self.get_queryset().filter(commitment_id=commitment_id)
+        serializer = self.get_serializer(attachments, many=True)
+        return Response(serializer.data)

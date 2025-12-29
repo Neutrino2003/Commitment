@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.postgres',  # PostgreSQL-specific features
+    'django.contrib.sites',     # Required for allauth
     
     # Third-party apps
     'rest_framework',
@@ -38,6 +39,12 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'django_celery_beat',     # Scheduled tasks
     'django_celery_results',  # Task result storage
+    
+    # OAuth / Social Authentication
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
     
     # Local apps
     'apps.users',
@@ -54,6 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',  # Required for allauth
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -81,11 +89,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME', default='ticktick_clone'),
-        'USER': config('DB_USER', default='postgres'),
-        'PASSWORD': config('DB_PASSWORD', default='postgres'),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST'),
+        'PORT': config('DB_PORT'),
         'OPTIONS': {
             'options': '-c search_path=public',
         },
@@ -270,3 +278,77 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(minute='*/15'),  # Every 15 minutes
     },
 }
+
+# =============================================================================
+# DJANGO-ALLAUTH CONFIGURATION (OAuth / Social Login)
+# =============================================================================
+
+# Required for django.contrib.sites
+SITE_ID = 1
+
+# Authentication Backends
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # Django default
+    'allauth.account.auth_backends.AuthenticationBackend',  # Allauth
+]
+
+# Allauth Account Settings
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+ACCOUNT_EMAIL_VERIFICATION = 'optional'
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_LOGOUT_ON_GET = True
+
+# Socialaccount Settings
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_LOGIN_ON_GET = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
+
+# Google OAuth Provider Configuration
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'OAUTH_PKCE_ENABLED': True,
+        'FETCH_USERINFO': True,
+        'APP': {
+            'client_id': config('GOOGLE_CLIENT_ID', default=''),
+            'secret': config('GOOGLE_CLIENT_SECRET', default=''),
+            'key': ''
+        }
+    }
+}
+
+# OAuth Redirect URLs (for frontend integration)
+LOGIN_REDIRECT_URL = config('FRONTEND_URL', default='http://localhost:3000') + '/dashboard'
+LOGOUT_REDIRECT_URL = config('FRONTEND_URL', default='http://localhost:3000') + '/login'
+ACCOUNT_LOGOUT_REDIRECT_URL = LOGOUT_REDIRECT_URL
+
+# =============================================================================
+# FILE UPLOAD CONFIGURATION
+# =============================================================================
+
+# Maximum file upload size (10 MB)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
+
+# Allowed file extensions for attachments
+ALLOWED_ATTACHMENT_EXTENSIONS = [
+    'jpg', 'jpeg', 'png', 'gif', 'webp',  # Images
+    'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',  # Documents
+    'txt', 'md', 'csv',  # Text files
+    'zip', 'rar', '7z',  # Archives
+    'mp4', 'mov', 'avi', 'webm',  # Videos
+    'mp3', 'wav', 'ogg',  # Audio
+]
+
+# Maximum file size for attachments (in bytes)
+MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024  # 10 MB
+

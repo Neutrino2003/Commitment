@@ -5,6 +5,7 @@ import { commitmentsApi } from '@/lib/api';
 import { Commitment, CommitmentDashboardStats } from '@/lib/types';
 import { CommitmentCard } from '@/components/commitments/CommitmentCard';
 import { CommitmentStats } from '@/components/commitments/CommitmentStats';
+import CommitmentDetailModal from '@/components/commitments/CommitmentDetailModal';
 import { NeoButton } from '@/components/ui/neo-button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
@@ -26,6 +27,7 @@ export default function CommitmentsPage() {
     const [stats, setStats] = useState<CommitmentDashboardStats | null>(null);
     const [isLoadingStats, setIsLoadingStats] = useState(true);
     const [filter, setFilter] = useState<'active' | 'completed' | 'failed'>('active');
+    const [selectedCommitment, setSelectedCommitment] = useState<Commitment | null>(null);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -133,9 +135,10 @@ export default function CommitmentsPage() {
                                     commitment={commitment}
                                     onActivate={handleActivate}
                                     onComplete={handleComplete}
-                                    onSubmitEvidence={() => toast('Evidence submission modal coming soon!')}
+                                    onSubmitEvidence={() => setSelectedCommitment(commitment)}
                                     onEdit={(id) => router.push(`/commitments/edit/${id}`)}
                                     onDelete={handleDelete}
+                                    onClick={() => setSelectedCommitment(commitment)}
                                 />
                             ))}
                         </div>
@@ -145,6 +148,22 @@ export default function CommitmentsPage() {
                         </div>
                     )}
                 </div>
+
+                {/* Commitment Detail Modal */}
+                {selectedCommitment && (
+                    <CommitmentDetailModal
+                        commitment={selectedCommitment}
+                        onClose={() => setSelectedCommitment(null)}
+                        onActivate={(id) => {
+                            handleActivate(id);
+                            setSelectedCommitment(null);
+                        }}
+                        onComplete={(id) => {
+                            handleComplete(id);
+                            setSelectedCommitment(null);
+                        }}
+                    />
+                )}
             </Layout>
         </AuthCheck>
     );

@@ -406,3 +406,75 @@ class HabitLog(models.Model):
     def __str__(self):
         status = '✓' if self.completed else '✗'
         return f"{self.habit.name} - {self.date} [{status}]"
+
+
+def task_attachment_path(instance, filename):
+    """Generate upload path for task attachments."""
+    return f'task_attachments/{instance.task.id}/{filename}'
+
+
+class TaskAttachment(models.Model):
+    """
+    Model for storing file attachments for tasks.
+    Supports multiple files per task.
+    """
+    task = models.ForeignKey(
+        Task,
+        on_delete=models.CASCADE,
+        related_name='attachments'
+    )
+    file = models.FileField(
+        upload_to=task_attachment_path,
+        help_text='Attached file'
+    )
+    file_name = models.CharField(
+        max_length=255,
+        help_text='Original filename'
+    )
+    file_size = models.PositiveIntegerField(
+        help_text='File size in bytes'
+    )
+    file_type = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text='MIME type of the file'
+    )
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='uploaded_task_attachments'
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'task_attachments'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['task', 'created_at'], name='task_attach_task_idx'),
+        ]
+    
+    def __str__(self):
+        return f"{self.task.title} - {self.file_name}"
+    
+    def save(self, *args, **kwargs):
+        """Auto-populate file metadata on save."""
+        if self.file and not self.file_name:
+            self.file_name = self.file.name.split('/')[-1]
+        if self.file and not self.file_size:
+            self.file_size = self.file.size
+        super().save(*args, **kwargs)
+    
+    @property
+    def is_image(self):
+        """Check if the file is an image."""
+        image_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+        return self.file_type in image_types
+    
+    @property
+    def file_extension(self):
+        """Get file extension."""
+        return self.file_name.split('.')[-1].lower() if '.' in self.file_name else ''
+

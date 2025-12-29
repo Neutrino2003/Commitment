@@ -539,3 +539,103 @@ class EvidenceVerification(models.Model):
         self.verified_at = timezone.now()
         self.save()
         return self
+
+
+def commitment_attachment_path(instance, filename):
+    """Generate upload path for commitment attachments."""
+    return f'commitment_attachments/{instance.commitment.id}/{filename}'
+
+
+class CommitmentAttachment(models.Model):
+    """
+    Model for storing file attachments for commitments.
+    Supports multiple files per commitment for evidence and documentation.
+    """
+    ATTACHMENT_TYPE_CHOICES = [
+        ('evidence', 'Evidence'),
+        ('document', 'Document'),
+        ('other', 'Other'),
+    ]
+    
+    commitment = models.ForeignKey(
+        Commitment,
+        on_delete=models.CASCADE,
+        related_name='attachments'
+    )
+    attachment_type = models.CharField(
+        max_length=20,
+        choices=ATTACHMENT_TYPE_CHOICES,
+        default='evidence'
+    )
+    file = models.FileField(
+        upload_to=commitment_attachment_path,
+        help_text='Attached file'
+    )
+    file_name = models.CharField(
+        max_length=255,
+        help_text='Original filename'
+    )
+    file_size = models.PositiveIntegerField(
+        help_text='File size in bytes'
+    )
+    file_type = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text='MIME type of the file'
+    )
+    description = models.TextField(
+        blank=True,
+        help_text='Optional description of the attachment'
+    )
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='uploaded_commitment_attachments'
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'commitment_attachments'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(
+                fields=['commitment', 'attachment_type'],
+                name='commit_attach_type_idx'
+            ),
+            models.Index(
+                fields=['commitment', 'created_at'],
+                name='commit_attach_created_idx'
+            ),
+        ]
+    
+    def __str__(self):
+        return f"{self.commitment.task.title} - {self.file_name} ({self.get_attachment_type_display()})"
+    
+    def save(self, *args, **kwargs):
+        """Auto-populate file metadata on save."""
+        if self.file and not self.file_name:
+            self.file_name = self.file.name.split('/')[-1]
+        if self.file and not self.file_size:
+            self.file_size = self.file.size
+        super().save(*args, **kwargs)
+    
+    @property
+    def is_image(self):
+        """Check if the file is an image."""
+        image_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+        return self.file_type in image_types
+    
+    @property
+    def is_video(self):
+        """Check if the file is a video."""
+        video_types = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm']
+        return self.file_type in video_types
+    
+    @property
+    def file_extension(self):
+        """Get file extension."""
+        return self.file_name.split('.')[-1].lower() if '.' in self.file_name else ''
+
