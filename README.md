@@ -1,51 +1,286 @@
-# Commitment - Productivity App with Stakes
+# Commitment - Anti-Procrastination Productivity App
 
-A full-stack productivity application that combines task management, habit tracking, and commitment-based accountability. Built with Django REST Framework backend and Next.js frontend.
+<div align="center">
 
-## 🚀 Features
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Django](https://img.shields.io/badge/Django-4.2-green.svg)
+![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)
+![License](https://img.shields.io/badge/license-MIT-yellow.svg)
 
-### Core Features
-- **Task Management** - Create, edit, delete tasks with priority levels
-- **Infinite Task Nesting** - Unlimited subtask depth using django-treebeard
-- **Habit Tracking** - Daily/weekly habit logging with streak calculation
-- **Commitments with Stakes** - Boost tasks with social, points, or monetary stakes
-- **Smart Recurrence** - RFC 5545 RRULE support (e.g., "Every 3rd Friday")
-- **Calendar View** - Date range queries with recurring task expansion
+**Turn your goals into commitments with real stakes.**
 
-### Frontend Features
-- **Neo-brutalist UI** - Bold, modern design with sharp shadows and vibrant colors
-- **Dashboard** - Overview of tasks, habits, and commitments
-- **Task Boost** - Convert any task to a commitment with stakes
-- **Nested Task Display** - Visual tree structure for subtasks
-- **Responsive Design** - Works on desktop and mobile
+</div>
 
-### Technical Highlights
-- **PostgreSQL** - GinIndex for full-text search, composite indexes
-- **Redis + Celery** - Background tasks and scheduled jobs
-- **JWT Authentication** - Secure token-based auth with refresh tokens
-- **Docker Support** - Complete docker-compose setup
-- **Service Layer** - Clean separation of business logic
+---
 
-## 📋 Requirements
+## 🎯 Overview
 
+Commitment is a full-stack productivity application that combines **task management**, **habit tracking**, and **accountability contracts with financial stakes**. It's designed to help you stop procrastinating by putting your money where your mouth is.
+
+### Key Differentiators
+- 💰 **Financial Stakes** - Bet money on your goals. Fail = lose money.
+- ⏱️ **Time-Block Scheduling** - Schedule tasks for specific time windows
+- 🔥 **Streak Tracking** - Visual heatmaps for habit consistency
+- 🎯 **Kanban Board** - Drag-and-drop task organization
+- ⌘K **Command Palette** - Quick navigation and search
+
+---
+
+## ✨ Features
+
+### Task Management
+| Feature | Status |
+|---------|--------|
+| Create/Edit/Delete Tasks | ✅ |
+| Infinite Subtask Nesting | ✅ |
+| Priority Levels (None/Low/Medium/High) | ✅ |
+| Lists & Tags Organization | ✅ |
+| Kanban Board View | ✅ |
+| Task Detail Modal | ✅ |
+| File Attachments | ✅ |
+| Time-Block Scheduling | ✅ |
+| Scheduled Timers | ✅ |
+| Recurring Tasks (RRULE) | ✅ |
+
+### Habit Tracking
+| Feature | Status |
+|---------|--------|
+| Daily/Weekly Habits | ✅ |
+| Streak Calculation | ✅ |
+| Completion Rate | ✅ |
+| GitHub-style Heatmap | ✅ |
+| Analytics Dashboard | ✅ |
+| Quick Log Widget | ✅ |
+
+### Commitments (Accountability)
+| Feature | Status |
+|---------|--------|
+| Create Commitments with Stakes | ✅ |
+| Social/Points/Money Stake Types | ✅ |
+| Evidence Upload (Photo/Video) | ✅ |
+| Lifecycle Timeline | ✅ |
+| Appeal System | ✅ |
+| Leniency Levels | ✅ |
+
+### Authentication & Security
+| Feature | Status |
+|---------|--------|
+| Email/Password Login | ✅ |
+| Google OAuth | ✅ |
+| JWT with Refresh Tokens | ✅ |
+| Protected Routes | ✅ |
+
+---
+
+## 🛠️ Tech Stack
+
+### Backend
+- **Framework:** Django 4.2 + Django REST Framework
+- **Database:** PostgreSQL with GinIndex for search
+- **Auth:** JWT (SimpleJWT) + django-allauth (OAuth)
+- **Tree Structure:** django-treebeard (Materialized Path)
+- **Recurrence:** django-recurrence (RFC 5545 RRULE)
+- **Task Queue:** Celery + Redis
+- **File Storage:** Local filesystem (configurable for S3)
+
+### Frontend
+- **Framework:** Next.js 15 (App Router)
+- **Language:** TypeScript
+- **Styling:** TailwindCSS (Neobrutalist Design)
+- **State:** TanStack React Query
+- **Animations:** Framer Motion
+- **Icons:** Lucide React
+- **Notifications:** React Hot Toast
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
 - Python 3.8+
 - Node.js 18+
 - PostgreSQL 12+
-- Redis (for Celery)
+- Redis (optional, for Celery)
 
-## ⚙️ Installation
-
-### Docker Setup (Recommended)
+### 1. Clone & Setup Environment
 
 ```bash
-# Clone repository
-git clone <repo-url>
-cd ticktick_clone
+git clone https://github.com/yourusername/commitment.git
+cd commitment
 
-# Copy environment file
+# Create environment file
 cp .env.example .env
+# Edit .env with your database credentials
+```
 
-# Start all services
+### 2. Backend Setup
+
+```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Setup database
+createdb commitment_db
+python manage.py migrate
+python manage.py createsuperuser
+
+# Run backend
+python manage.py runserver
+```
+
+### 3. Frontend Setup
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Run frontend
+npm run dev
+```
+
+### 4. Access the App
+
+| URL | Description |
+|-----|-------------|
+| http://localhost:3000 | Frontend |
+| http://localhost:8000/api/ | API |
+| http://localhost:8000/admin/ | Django Admin |
+| http://localhost:8000/api/docs/ | API Documentation |
+
+---
+
+## 📁 Project Structure
+
+```
+commitment/
+├── config/                    # Django configuration
+│   ├── settings.py
+│   ├── urls.py
+│   └── celery.py
+├── apps/
+│   ├── users/                 # Authentication
+│   ├── tasks/                 # Tasks, Lists, Tags, Habits
+│   └── commitments/           # Commitments & Stakes
+├── frontend/
+│   ├── app/                   # Next.js pages
+│   │   ├── tasks/             # Task list & Kanban
+│   │   ├── habits/            # Habits & Analytics
+│   │   ├── commitments/       # Commitment management
+│   │   └── auth/              # OAuth callbacks
+│   ├── components/
+│   │   ├── tasks/             # TaskCard, TaskDetailModal, etc.
+│   │   ├── habits/            # HabitCalendar, QuickLogWidget
+│   │   ├── commitments/       # CommitmentCard, Timeline
+│   │   ├── ui/                # Buttons, Cards, FileUpload
+│   │   └── layout/            # Navbar, CommandPalette
+│   ├── contexts/              # TimerContext
+│   ├── hooks/                 # useTasks, useHabits, etc.
+│   └── lib/                   # API client, utilities
+├── .env.example
+├── requirements.txt
+├── docker-compose.yml
+└── README.md
+```
+
+---
+
+## 🔧 Environment Variables
+
+Copy `.env.example` to `.env` and configure:
+
+```env
+# Django
+SECRET_KEY=your-super-secret-key
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+
+# Database
+DB_NAME=commitment_db
+DB_USER=postgres
+DB_PASSWORD=your-password
+DB_HOST=localhost
+DB_PORT=5432
+
+# Redis
+REDIS_URL=redis://localhost:6379/0
+
+# Frontend URL
+FRONTEND_URL=http://localhost:3000
+
+# Google OAuth (optional)
+GOOGLE_CLIENT_ID=your-client-id
+GOOGLE_CLIENT_SECRET=your-client-secret
+```
+
+---
+
+## 📡 API Endpoints
+
+### Authentication
+```
+POST /api/auth/register/        # Register
+POST /api/auth/login/           # Login (JWT)
+POST /api/auth/token/refresh/   # Refresh token
+GET  /api/auth/google/          # Google OAuth
+```
+
+### Tasks
+```
+GET    /api/tasks/              # List tasks
+POST   /api/tasks/              # Create task
+GET    /api/tasks/{id}/         # Get task
+PATCH  /api/tasks/{id}/         # Update task
+DELETE /api/tasks/{id}/         # Delete task
+POST   /api/tasks/{id}/complete/# Complete task
+```
+
+### Habits
+```
+GET    /api/habits/             # List habits
+POST   /api/habits/             # Create habit
+POST   /api/habit-logs/         # Log completion
+```
+
+### Commitments
+```
+GET    /api/commitments/        # List commitments
+POST   /api/commitments/        # Create commitment
+POST   /api/commitments/{id}/activate/   # Activate
+POST   /api/commitments/{id}/complete/   # Complete
+```
+
+### Attachments
+```
+POST   /api/task-attachments/           # Upload to task
+POST   /api/commitment-attachments/     # Upload to commitment
+```
+
+---
+
+## 🎨 Design System
+
+The app uses a **Neobrutalist** design language:
+
+- **Borders:** `border-3 border-ink-black`
+- **Shadows:** `shadow-neo` (4px offset), `shadow-neo-lg` (8px)
+- **Colors:**
+  - Focus Yellow: `#FFD700`
+  - Accent Pink: `#FF6B6B`
+  - Paper White: `#FAFAFA`
+  - Ink Black: `#1A1A1A`
+
+---
+
+## 🐳 Docker Deployment
+
+```bash
+# Build and run all services
 docker-compose up -d
 
 # Run migrations
@@ -55,218 +290,32 @@ docker-compose exec backend python manage.py migrate
 docker-compose exec backend python manage.py createsuperuser
 ```
 
-### Manual Setup
+---
 
-#### Backend
-```bash
-cd ticktick_clone
+## 📝 Documentation
 
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate
+- [Frontend Documentation](frontend/FRONTEND_DOCUMENTATION.md) - Complete frontend feature list, components, and improvement areas
 
-# Install dependencies
-pip install -r requirements.txt
+---
 
-# Setup database
-createdb ticktick_clone
-psql -d ticktick_clone -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+## 🤝 Contributing
 
-# Run migrations
-python manage.py migrate
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-# Create superuser
-python manage.py createsuperuser
+---
 
-# Run server
-python manage.py runserver
-```
+## 📄 License
 
-#### Frontend
-```bash
-cd frontend
+This project is licensed under the MIT License.
 
-# Install dependencies
-npm install
-
-# Run development server
-npm run dev
-```
-
-## 🏃 Running
-
-### With Docker
-```bash
-docker-compose up
-```
-
-### Without Docker
-```bash
-# Terminal 1 - Backend
-cd ticktick_clone
-source venv/bin/activate
-python manage.py runserver
-
-# Terminal 2 - Frontend
-cd frontend
-npm run dev
-
-# Terminal 3 - Celery Worker (optional)
-celery -A config worker -l info
-
-# Terminal 4 - Celery Beat (optional)
-celery -A config beat -l info
-```
-
-**URLs:**
-- Frontend: http://localhost:3000
-- API: http://localhost:8000/api/
-- Admin: http://localhost:8000/admin/
-- API Docs: http://localhost:8000/api/docs/
-
-## 📡 API Endpoints
-
-### Authentication
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register/` | Register new user |
-| POST | `/api/auth/login/` | Login (get JWT) |
-| POST | `/api/auth/token/refresh/` | Refresh token |
-| GET | `/api/auth/profile/` | Get profile |
-
-### Tasks
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/tasks/` | List tasks |
-| POST | `/api/tasks/` | Create task |
-| GET | `/api/tasks/{id}/` | Get task |
-| PATCH | `/api/tasks/{id}/` | Update task |
-| DELETE | `/api/tasks/{id}/` | Delete task |
-| GET | `/api/tasks/tree/` | Get tree structure |
-
-### Habits
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/habits/` | List habits |
-| POST | `/api/habits/` | Create habit |
-| PATCH | `/api/habits/{id}/` | Update habit |
-| DELETE | `/api/habits/{id}/` | Delete habit |
-
-### Commitments
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/commitments/` | List commitments |
-| POST | `/api/commitments/` | Create commitment |
-| PATCH | `/api/commitments/{id}/` | Update commitment |
-| POST | `/api/commitments/{id}/activate/` | Activate commitment |
-| POST | `/api/commitments/{id}/complete/` | Complete commitment |
-
-### Special Endpoints
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/sync/` | Get all user data |
-| GET | `/api/calendar/` | Calendar view with recurring expansion |
-
-## 🏗️ Project Structure
-
-```
-ticktick_clone/
-├── config/                 # Django configuration
-│   ├── settings.py
-│   ├── celery.py          # Celery configuration
-│   └── urls.py
-├── apps/
-│   ├── users/             # User authentication
-│   ├── tasks/             # Task, List, Tag, Habit
-│   └── commitments/       # Commitments with stakes
-├── frontend/              # Next.js frontend
-│   ├── app/               # App router pages
-│   ├── components/        # React components
-│   ├── hooks/             # Custom hooks
-│   └── lib/               # Utilities & API
-├── docker-compose.yml
-├── requirements.txt
-└── README.md
-```
-
-## 🧩 Key Models
-
-### Task
-- `title`, `notes`, `status`, `priority`
-- `due_date`, `start_date`, `duration_minutes`
-- `recurrence` (RFC 5545 RRULE)
-- `parent_id` (for nesting via treebeard)
-- `list` (FK), `tags` (M2M)
-
-### Commitment
-- `task` (FK) - Linked task
-- `title`, `due_date`, `status`
-- `stake_type` (social/points/money)
-- `stake_amount`, `currency`
-- `leniency` (lenient/normal/hard)
-- `evidence_type`, `evidence_file`
-
-### Habit
-- `name`, `description`, `color`, `icon`
-- `frequency` (DAILY/WEEKLY/CUSTOM)
-- `streak`, `completion_rate`
-
-## 🔧 Environment Variables
-
-```env
-# Database
-POSTGRES_DB=ticktick
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=password
-POSTGRES_HOST=localhost
-
-# Django
-SECRET_KEY=your-secret-key
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-
-# Redis
-REDIS_URL=redis://localhost:6379/0
-
-# Celery
-CELERY_BROKER_URL=redis://localhost:6379/0
-```
-
-## 🚀 Deployment
-
-### Production Checklist
-1. Set `DEBUG=False`
-2. Configure `ALLOWED_HOSTS`
-3. Use strong `SECRET_KEY`
-4. Enable HTTPS
-5. Configure CORS properly
-6. Set up proper database credentials
-7. Configure Redis for production
-8. Set up Celery workers
-
-## 📦 Key Dependencies
-
-### Backend
-- Django 4.2
-- Django REST Framework
-- django-treebeard (tree structures)
-- django-recurrence (RRULE support)
-- djangorestframework-simplejwt
-- Celery + Redis
-
-### Frontend
-- Next.js 15
-- React 18
-- TanStack Query
-- Tailwind CSS
-- Lucide Icons
-- React Hot Toast
-
-## 📝 License
-
-MIT License
+---
 
 ## 🙏 Acknowledgments
 
 - TickTick for inspiration
-- Django and Next.js communities
+- Django & Next.js communities
+- Neobrutalist design movement

@@ -5,6 +5,7 @@ djangorestframework-simplejwt==5.3.0
 
 # Database
 psycopg2-binary==2.9.9
+dj-database-url==2.1.0
 
 # Tree Structure for Infinite Nesting
 django-treebeard==4.7.1
@@ -51,3 +52,7 @@ django-allauth==0.63.3
 
 # Image Processing
 Pillow==10.2.0
+
+# Production Server
+gunicorn==21.2.0
+whitenoise==6.6.0
