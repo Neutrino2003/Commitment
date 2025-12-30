@@ -5,8 +5,11 @@ import { Habit } from '@/lib/types';
 import { LegoBrick } from './lego-brick';
 import { Activity, BookOpen, Droplets, Flame, Zap } from 'lucide-react';
 
+// Extended Habit type with computed property
+type HabitWithToday = Habit & { completed_today?: boolean };
+
 interface HabitStackProps {
-    habits: Habit[];
+    habits: HabitWithToday[];
 }
 
 export function HabitStack({ habits }: HabitStackProps) {
