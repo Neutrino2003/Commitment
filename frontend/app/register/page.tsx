@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { NeoButton } from '@/components/ui/neo-button';
 import { NeoCard } from '@/components/ui/neo-card';
-import axios from 'axios';
+import { authApi } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -29,7 +29,7 @@ export default function RegisterPage() {
 
         try {
             // 1. Register
-            await axios.post('http://localhost:8000/api/auth/register/', {
+            await authApi.register({
                 username,
                 email,
                 password,
@@ -37,14 +37,10 @@ export default function RegisterPage() {
             });
 
             // 2. Auto-login
-            const loginResponse = await axios.post('http://localhost:8000/api/auth/login/', {
-                username,
-                password,
-            });
+            const loginResponse = await authApi.login(username, password);
 
             // Store tokens
-            localStorage.setItem('accessToken', loginResponse.data.access);
-            localStorage.setItem('refreshToken', loginResponse.data.refresh);
+            authApi.setTokens(loginResponse.data.access, loginResponse.data.refresh);
 
             // Redirect
             router.push('/');
