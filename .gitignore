@@ -49,7 +49,6 @@ frontend/build/
 .env.development.local
 .env.test.local
 .env.production.local
-!.env.example
 
 # ================== IDE / EDITOR ==================
 .vscode/
