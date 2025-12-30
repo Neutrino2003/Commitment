@@ -6,9 +6,16 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import JsonResponse
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView
+)
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView
+)
 
 # Import views from apps
 from apps.users.views import RegisterView, UserProfileView, GoogleLoginView, GoogleLoginCallbackView
@@ -40,7 +47,15 @@ router.register(r'complaints', ComplaintViewSet, basename='complaint')
 router.register(r'evidence-verifications', EvidenceVerificationViewSet, basename='evidence-verification')
 router.register(r'commitment-attachments', CommitmentAttachmentViewSet, basename='commitment-attachment')
 
+# Health check view for Render/load balancers
+def health_check(request):
+    return JsonResponse({'status': 'healthy'}, status=200)
+
+
 urlpatterns = [
+    # Health check (must be first, no auth required)
+    path('api/health/', health_check, name='health_check'),
+
     # Admin
     path('admin/', admin.site.urls),
     
