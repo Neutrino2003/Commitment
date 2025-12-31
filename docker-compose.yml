@@ -1,24 +1,25 @@
-version: '3.8'
+# Docker Compose for LOCAL DEVELOPMENT only
+# For production, deploy to Render with Neon database
 
 services:
-  # PostgreSQL Database
+  # PostgreSQL Database (Local)
   db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_DB: ticktick_clone
-      POSTGRES_USER: app_user
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${DB_NAME:-ticktick_clone}
+      POSTGRES_USER: ${DB_USER:-app_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-app_user}" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # Redis (Celery broker + Cache)
+  # Redis (for Celery - optional)
   redis:
     image: redis:7-alpine
     ports:
@@ -26,7 +27,7 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -37,71 +38,18 @@ services:
       context: .
       dockerfile: Dockerfile
     command: python manage.py runserver 0.0.0.0:8000
+    env_file: .env
+    environment:
+      - DB_HOST=db
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
     volumes:
       - .:/app
     ports:
       - "8000:8000"
-    environment:
-      - DEBUG=True
-      - DB_HOST=db
-      - DB_NAME=ticktick_clone
-      - DB_USER=app_user
-      - DB_PASSWORD=postgres
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
     depends_on:
       db:
         condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  # Celery Worker
-  celery_worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    command: celery -A config worker -l INFO
-    volumes:
-      - .:/app
-    environment:
-      - DEBUG=True
-      - DB_HOST=db
-      - DB_NAME=ticktick_clone
-      - DB_USER=app_user
-      - DB_PASSWORD=postgres
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      backend:
-        condition: service_started
-
-  # Celery Beat (Scheduler)
-  celery_beat:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    command: celery -A config beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
-    volumes:
-      - .:/app
-    environment:
-      - DEBUG=True
-      - DB_HOST=db
-      - DB_NAME=ticktick_clone
-      - DB_USER=app_user
-      - DB_PASSWORD=postgres
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      backend:
-        condition: service_started
 
 volumes:
   postgres_data:

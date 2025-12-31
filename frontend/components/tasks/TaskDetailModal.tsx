@@ -101,7 +101,11 @@ export default function TaskDetailModal({
             });
             toast.success('Task updated');
             setIsEditing(false);
-            onUpdate?.({ ...task, ...editedTask });
+            onUpdate?.({
+                ...task,
+                ...editedTask,
+                list: editedTask.list ? Number(editedTask.list) : null
+            });
         } catch (error) {
             toast.error('Failed to update task');
         }
@@ -251,7 +255,7 @@ export default function TaskDetailModal({
                             {isEditing ? (
                                 <select
                                     value={editedTask.priority}
-                                    onChange={(e) => setEditedTask({ ...editedTask, priority: Number(e.target.value) })}
+                                    onChange={(e) => setEditedTask({ ...editedTask, priority: Number(e.target.value) as 0 | 1 | 2 | 3 })}
                                     className="px-2 py-1 border-2 border-ink-black font-medium"
                                 >
                                     <option value={3}>High</option>

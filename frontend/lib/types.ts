@@ -10,6 +10,7 @@ export interface Task {
     kanban_order: number;
     list: number | null;
     tags: Tag[];
+    tag_ids?: number[];  // For API update calls
     is_recurring: boolean;
     subtasks?: Task[];
     parent_id?: number | null;
